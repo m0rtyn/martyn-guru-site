@@ -52,5 +52,8 @@
     "gh-pages": "^2.0.1",
     "stylelint": "^9.9.0",
     "stylelint-scss": "^3.4.0"
+  },
+  "resolutions": {
+    "graceful-fs": "^4.2.4"
   }
 }
