@@ -1,8 +1,9 @@
 extends ../base/main-page-layout.pug
 
 block variables
-    - let scriptSrc = '/assets/js/home.js'
-    - let scriptSrc2 = '/assets/js/posts.js'
+    - let repoName = 'martyn-guru-site'
+    - let scriptSrc = repoName + './assets/js/home.js'
+    - let scriptSrc2 = repoName + './assets/js/posts.js'
     
 block content
   main#main-page
