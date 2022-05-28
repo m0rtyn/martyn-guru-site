@@ -17,7 +17,7 @@ const postcssFixes = require('postcss-fixes');
 const autoprefixer = require('autoprefixer');
 const cssnano = require('cssnano');
 // const remove = require('gulp-html-remove');
-// const sitemap = require('gulp-sitemap');
+const sitemap = require('gulp-sitemap');
 
 const handleError = (error) => {
   const emitter = new EventEmitter();
@@ -111,20 +111,20 @@ const clean = async () => del.sync([
   '!public/assets',
   '!public/assets/video/**',
   '!public/assets/fonts/**',
-  'public/assets/img/**',
+  'public/assets/img*',
   '!public/shows',
-  '!public/shows/motivation/**',
+  '!public/shows/motivation*',
   '!public/shows/255-shades-of-gray*',
 ]);
 
-// const buildSitemap = () => src(['public/***/index.html', 'public/**/*.html'], {
-//  read: false,
-// })
-//  .pipe(sitemap({
-//    siteUrl: 'https://m0rtyn.github.io/martyn-guru-site/',
-//    priority: (siteUrl, loc) => (loc.match(/papers|posts/g) ? 1 : 0.5),
-//  }))
-//  .pipe(dest('./public'));
+exports.buildSitemap = () => src(['public/**/index.html', 'public/**/.html'], {
+  read: false,
+})
+  .pipe(sitemap({
+    siteUrl: 'https://m0rtyn.github.io/martyn-guru-site/',
+    priority: (siteUrl, loc) => (loc.match(/papers|posts/g) ? 1 : 0.5),
+  }))
+  .pipe(dest('./public'));
 
 exports.dev = series(
   clean,
@@ -137,7 +137,7 @@ exports.dev = series(
   serve,
 );
 
-const build = series(
+exports.build = series(
   clean,
   copy,
   buildPug,
@@ -146,5 +146,3 @@ const build = series(
   buildImages,
   buildSvg,
 );
-
-exports.default = build;
