@@ -1,6 +1,10 @@
-const gulp = require('gulp');
+const {
+  dest, src, watch, series,
+} = require('gulp');
+const { EventEmitter } = require('events');
+
 const pug = require('gulp-pug');
-const sass = require('gulp-sass');
+const sass = require('gulp-sass')(require('sass'));
 const plumber = require('gulp-plumber');
 const postcss = require('gulp-postcss');
 const svgmin = require('gulp-svgmin');
@@ -13,15 +17,15 @@ const postcssFixes = require('postcss-fixes');
 const autoprefixer = require('autoprefixer');
 const cssnano = require('cssnano');
 // const remove = require('gulp-html-remove');
-const sitemap = require('gulp-sitemap');
+// const sitemap = require('gulp-sitemap');
 
 const handleError = (error) => {
-  console.log(error.toString());
-  this.emit('end');
+  const emitter = new EventEmitter();
+  emitter.emit('end');
+  console.error(error.toString());
 };
 
-gulp.task('style', () => gulp
-  .src('src/assets/styles/main.scss')
+const buildStyles = async () => src('src/assets/styles/main.scss')
   .pipe(plumber())
   .pipe(sass())
   .pipe(
@@ -35,11 +39,10 @@ gulp.task('style', () => gulp
     ]),
   )
   .pipe(rename('style.min.css'))
-  .pipe(gulp.dest('public/assets/styles'))
-  .pipe(browserSync.stream()));
+  .pipe(dest('public/assets/styles'))
+  .pipe(browserSync.stream());
 
-gulp.task('pug', () => gulp
-  .src('src/markup/pages/**/*.pug')
+const buildPug = async () => src('src/markup/pages/**/*.pug')
   .pipe(plumber())
   .pipe(
     pug({
@@ -49,65 +52,59 @@ gulp.task('pug', () => gulp
   .pipe(htmlmin({
     collapseWhitespace: true,
   }))
-  .pipe(gulp.dest('public'))
-  .pipe(browserSync.stream()));
+  .pipe(dest('public'))
+  .pipe(browserSync.stream());
 
-// gulp.task('exported-html-cleaner', () => gulp
-//   .src('src/markup/blocks/metabaza/ChatExport/messages.html')
+// task('exported-html-cleaner', () => src('src/markup/blocks/metabaza/ChatExport/messages.html');
 //   .pipe(remove('head, .page_header, .sticker, .photo'))
 //   .pipe(rename('index.html'))
-//   .pipe(gulp.dest('src/markup/blocks/metabaza')));
+//   .pipe(dest('src/markup/blocks/metabaza')));
 
-gulp.task('js', () => gulp
-  .src('src/assets/js/*.js')
+const buildJs = async () => src('src/assets/js/*.js')
   .pipe(babel({
     presets: ['@babel/env'],
   }))
   .on('error', handleError)
-  .pipe(gulp.dest('public/assets/js'))
-  .pipe(browserSync.stream()));
+  .pipe(dest('public/assets/js'))
+  .pipe(browserSync.stream());
 
-gulp.task('jsDebug', () => gulp
-  .src('src/assets/js/*.js')
+const jsDebug = async () => src('src/assets/js/*.js')
   .on('error', handleError)
-  .pipe(gulp.dest('public/assets/js'))
-  .pipe(browserSync.stream()));
+  .pipe(dest('public/assets/js'))
+  .pipe(browserSync.stream());
 
-gulp.task('images', () => gulp
-  .src('src/assets/img/**/**/*.{png,jpg,gif,webp}')
-  .pipe(gulp.dest('public/assets/img')));
+const buildImages = async () => src('src/assets/img/**/*.{png,jpg,gif,webp}')
+  .pipe(dest('public/assets/img'));
 
-gulp.task('svg', () => gulp
-  .src('src/**/**/**/*.svg')
+const buildSvg = async () => src('src/**/**/**/*.svg')
   .pipe(svgmin())
-  .pipe(gulp.dest('public/')));
+  .pipe(dest('public/'));
 
-gulp.task('serve', () => {
+const serve = async () => {
   browserSync.init({
     server: 'public',
     notify: true,
     open: false,
   });
 
-  gulp.watch('src/**/**/*.scss', ['style']);
-  gulp.watch('src/markup/**/**/**/**/*.pug', ['pug']);
-  gulp.watch('src/assets/img/**/*.*', ['images']);
-  gulp.watch('src/assets/js/**/*.js', ['jsDebug']);
-});
+  watch('src/**/**/*.scss', buildStyles);
+  watch('src/markup/**/**/**/**/*.pug', buildPug);
+  watch('src/assets/img/**/*.*', buildImages);
+  watch('src/assets/js/**/*.js', jsDebug);
+};
 
-gulp.task('copy', () => gulp
-  .src(
-    [
-      './src/assets/fonts/**/*.{woff,woff2}',
-      './src/assets/video/**/*.mp4',
-      './src/shows/**',
-    ], {
-      base: './src',
-    },
-  )
-  .pipe(gulp.dest('./public/')));
+const copy = () => src(
+  [
+    './src/assets/fonts/**/*.{woff,woff2}',
+    './src/assets/video/**/*.mp4',
+    './src/shows/**',
+  ], {
+    base: './src',
+  },
+)
+  .pipe(dest('./public/'));
 
-gulp.task('clean', () => del.sync([
+const clean = async () => del.sync([
   'public/**',
   '!public',
   '!public/*',
@@ -117,36 +114,37 @@ gulp.task('clean', () => del.sync([
   'public/assets/img/**',
   '!public/shows',
   '!public/shows/motivation/**',
-  '!public/shows/255-shades-of-gray/**',
-]));
-
-gulp.task('sitemap', () => gulp
-  .src(['public/**/**/index.html', 'public/**/*.html'], {
-    read: false,
-  })
-  .pipe(sitemap({
-    siteUrl: 'https://martyn.guru',
-    priority: (siteUrl, loc) => (loc.match(/papers|posts/g) ? 1 : 0.5),
-  }))
-  .pipe(gulp.dest('./public')));
-
-gulp.task('dev', [
-  'clean',
-  'copy',
-  'pug',
-  'style',
-  'jsDebug',
-  'images',
-  'svg',
-  'serve',
+  '!public/shows/255-shades-of-gray*',
 ]);
 
-gulp.task('build', [
-  'clean',
-  'copy',
-  'pug',
-  'style',
-  'js',
-  'images',
-  'svg',
-]);
+// const buildSitemap = () => src(['public/***/index.html', 'public/**/*.html'], {
+//  read: false,
+// })
+//  .pipe(sitemap({
+//    siteUrl: 'https://m0rtyn.github.io/martyn-guru-site/',
+//    priority: (siteUrl, loc) => (loc.match(/papers|posts/g) ? 1 : 0.5),
+//  }))
+//  .pipe(dest('./public'));
+
+exports.dev = series(
+  clean,
+  copy,
+  buildPug,
+  buildStyles,
+  jsDebug,
+  buildImages,
+  buildSvg,
+  serve,
+);
+
+const build = series(
+  clean,
+  copy,
+  buildPug,
+  buildStyles,
+  buildJs,
+  buildImages,
+  buildSvg,
+);
+
+exports.default = build;
